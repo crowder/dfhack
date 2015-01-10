@@ -1061,7 +1061,7 @@ bool Core::Init()
     Lua::Core::Init(con);
 
     // create mutex for syncing with interactive tasks
-    misc_data_mutex=new mutex();
+    misc_data_mutex=new tthread::mutex();
     cerr << "Initializing Plugins.\n";
     // create plugin manager
     plug_mgr = new PluginManager(this);
@@ -1070,8 +1070,8 @@ bool Core::Init()
     temp->core = this;
     temp->plug_mgr = plug_mgr;
 
-    HotkeyMutex = new mutex();
-    HotkeyCond = new condition_variable();
+    HotkeyMutex = new tthread::mutex();
+    HotkeyCond = new tthread::condition_variable();
 
     if (!is_text_mode)
     {
@@ -1176,7 +1176,7 @@ void *Core::GetData( std::string key )
 
 bool Core::isSuspended(void)
 {
-    lock_guard<mutex> lock(d->AccessMutex);
+    tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
     return (d->df_suspend_depth > 0 && d->df_suspend_thread == this_thread::get_id());
 }
@@ -1187,7 +1187,7 @@ void Core::Suspend()
 
     // If recursive, just increment the count
     {
-        lock_guard<mutex> lock(d->AccessMutex);
+        tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
         if (d->df_suspend_depth > 0 && d->df_suspend_thread == tid)
         {
@@ -1200,14 +1200,14 @@ void Core::Suspend()
     Core::Cond *nc = new Core::Cond();
 
     {
-        lock_guard<mutex> lock2(d->StackMutex);
+        tthread::lock_guard<tthread::mutex> lock2(d->StackMutex);
 
         d->suspended_tools.push(nc);
     }
 
     // wait until Core::Update() wakes up the tool
     {
-        lock_guard<mutex> lock(d->AccessMutex);
+        tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
         nc->Lock(&d->AccessMutex);
 
@@ -1220,7 +1220,7 @@ void Core::Suspend()
 void Core::Resume()
 {
     auto tid = this_thread::get_id();
-    lock_guard<mutex> lock(d->AccessMutex);
+    tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
     assert(d->df_suspend_depth > 0 && d->df_suspend_thread == tid);
 
@@ -1239,7 +1239,7 @@ int Core::TileUpdate()
 int Core::ClaimSuspend(bool force_base)
 {
     auto tid = this_thread::get_id();
-    lock_guard<mutex> lock(d->AccessMutex);
+    tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
     if (force_base || d->df_suspend_depth <= 0)
     {
@@ -1259,7 +1259,7 @@ int Core::ClaimSuspend(bool force_base)
 void Core::DisclaimSuspend(int level)
 {
     auto tid = this_thread::get_id();
-    lock_guard<mutex> lock(d->AccessMutex);
+    tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
 
     assert(d->df_suspend_depth == level && d->df_suspend_thread == tid);
 
@@ -1386,14 +1386,14 @@ int Core::Update()
 
     // wake waiting tools
     // do not allow more tools to join in while we process stuff here
-    lock_guard<mutex> lock_stack(d->StackMutex);
+    tthread::lock_guard<tthread::mutex> lock_stack(d->StackMutex);
 
     while (!d->suspended_tools.empty())
     {
         Core::Cond * nc = d->suspended_tools.top();
         d->suspended_tools.pop();
 
-        lock_guard<mutex> lock(d->AccessMutex);
+        tthread::lock_guard<tthread::mutex> lock(d->AccessMutex);
         // wake tool
         nc->Unlock();
         // wait for tool to wake us

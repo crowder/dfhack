@@ -146,7 +146,9 @@ void OutputToggleString(int &x, int &y, const char *text, const char *hotkey, bo
 
 inline string int_to_string(const int n)
 {
-    return static_cast<ostringstream*>( &(ostringstream() << n) )->str();
+    ostringstream strm;
+    strm << n;
+    return strm.str();
 }
 
 static void set_to_limit(int &value, const int maximum, const int min = 0)

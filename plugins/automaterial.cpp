@@ -110,7 +110,9 @@ void OutputToggleString(int &x, int &y, const char *text, const char *hotkey, bo
 
 static string int_to_string(int i)
 {
-    return static_cast<ostringstream*>( &(ostringstream() << i))->str();
+    ostringstream strm;
+    strm << i;
+    return strm.str();
 }
 
 //START UI Functions

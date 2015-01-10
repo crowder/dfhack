@@ -3,6 +3,7 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include <math.h>
 
 #include "Core.h"
 #include "Console.h"
@@ -28,8 +29,8 @@
 #include "df/plant.h"
 
 #ifdef LINUX_BUILD
-#include <tr1/memory>
-using std::tr1::shared_ptr;
+#include <memory>
+using std::shared_ptr;
 #else
 #include <memory>
 using std::shared_ptr;
